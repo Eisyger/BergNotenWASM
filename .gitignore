@@ -1,0 +1,54 @@
+# Ignore Visual Studio temporary files, build results, and
+# user-specific files
+.vscode/
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Ignore build outputs
+bin/
+obj/
+
+# Ignore NuGet Packages
+*.nupkg
+# Uncomment if you have NuGet Package Restore enabled for solution
+# *.nuget/packages
+# Packages folder can be ignored if package restore is used
+**/[Pp]ackages/
+# Uncomment if necessary however generally it will be restored by NuGet so no need to commit the packages
+# **/[Pp]ackages/*/
+
+# Microsoft Visual Studio Code
+.vscode/*
+
+# Azure Pipelines
+.azdo/
+temp/
+# Ignore Azure Pipeline temporary files
+*.rsp
+*.log
+
+# Rider
+.idea/
+
+# Mono Auto Generated Files
+mono_crash.*
+
+# Mac-specific
+.DS_Store
+
+# Windows-specific
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# WebAssembly-specific (for Blazor)
+wwwroot/*.json
+wwwroot/*.css
+wwwroot/*.map
+wwwroot/_framework/*
+
+# Ignore the publish output folder (optional)
+publish/
