@@ -1,0 +1,32 @@
+trigger:
+- main  # Ersetze dies durch den Branch, den du verwenden möchtest
+
+pool:
+  vmImage: 'ubuntu-latest'  # Du kannst auch 'windows-latest' verwenden, wenn du möchtest
+
+variables:
+  solution: '**/*.sln'  # Der Pfad zu deiner .sln-Datei
+  buildConfiguration: 'Release'  # Konfiguration, die verwendet werden soll
+
+steps:
+- task: DotNetCoreCLI@2
+  inputs:
+    command: 'restore'
+    projects: '$(solution)'  # Wiederherstellung der NuGet-Pakete
+
+- task: DotNetCoreCLI@2
+  inputs:
+    command: 'build'
+    projects: '$(solution)'
+    arguments: '--configuration $(buildConfiguration)'  # Anwendung im Release-Modus bauen
+
+- task: DotNetCoreCLI@2
+  inputs:
+    command: 'publish'
+    projects: '$(solution)'
+    arguments: '--configuration $(buildConfiguration) --output $(Build.ArtifactStagingDirectory)'  # Veröffentlichen der Anwendung
+
+- task: PublishBuildArtifacts@1
+  inputs:
+    PathtoPublish: '$(Build.ArtifactStagingDirectory)'
+    ArtifactName: 'drop'  # Name des veröffentlichten Artefakts
