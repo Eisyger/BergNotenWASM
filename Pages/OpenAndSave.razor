@@ -1,0 +1,26 @@
+﻿@page "/openandsave"
+
+<InputFile OnChange="ReadFileAsync"/>
+<p>@fileContent</p>
+
+
+
+
+@code {
+    private ElementReference fileInput;
+    private string fileContent;
+
+    private async Task ReadFileAsync(InputFileChangeEventArgs e)
+    {
+        var file = e.File; // Die ausgewählte Datei
+        var buffer = new byte[file.Size];
+
+        using (var stream = file.OpenReadStream(maxAllowedSize: 1024 * 1024 * 10)) // Max 10 MB
+        {
+            await stream.ReadAsync(buffer, 0, (int)file.Size);
+        }
+
+        // Den Inhalt in eine String umwandeln
+        fileContent = System.Text.Encoding.UTF8.GetString(buffer);
+    }
+}

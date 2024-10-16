@@ -1,0 +1,32 @@
+﻿@page "/username"
+@inject BergNotenWASM.Services.LocalStorageService localStorageService
+
+<div class="d-flex flex-column align-items-center">
+    <h3>Username</h3>
+</div>
+
+<div class="d-flex flex-column align-items-center">
+    <p class="p-0 m-1" style="width: 250px;">Gib deinen Namen an:</p>
+    <input class="form-control m-1" style="width: 250px;" type="text" id="username" placeholder="Dein Name" @bind="Name"/>
+    <input class="btn btn-primary m-1" type="button" value="OK" style="width: 250px;" @onclick="Save"/>
+</div>
+
+
+
+@code {
+    private string Name { get; set; } = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Name aus localStorage abrufen
+        Name = await localStorageService.GetItemAsync("username") ?? string.Empty;
+    }
+
+    private async Task Save()
+    {
+        // Name in localStorage speichern
+        await localStorageService.SetItemAsync("username", Name);
+       e
+    }
+
+}

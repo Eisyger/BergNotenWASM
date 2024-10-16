@@ -1,4 +1,5 @@
 using BergNotenWASM;
+using BergNotenWASM.Services;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 
@@ -7,5 +8,8 @@ builder.RootComponents.Add<App>("#app");
 builder.RootComponents.Add<HeadOutlet>("head::after");
 
 builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri(builder.HostEnvironment.BaseAddress) });
+
+// Registriere den LocalStorageService
+builder.Services.AddScoped<LocalStorageService>();
 
 await builder.Build().RunAsync();
