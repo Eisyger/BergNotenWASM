@@ -1,14 +1,19 @@
 ﻿@page "/openandsave"
+@inject IJSRuntime JSRuntime
 
 <InputFile OnChange="ReadFileAsync"/>
 <p>@fileContent</p>
 
+
+<input type="button" class="btn btn-primary m-1" value="Donwload" style="width:200px" @onclick="DownloadAsync"/>
 
 
 
 @code {
     private ElementReference fileInput;
     private string fileContent;
+
+    private MemoryStream ms;
 
     private async Task ReadFileAsync(InputFileChangeEventArgs e)
     {
@@ -22,5 +27,17 @@
 
         // Den Inhalt in eine String umwandeln
         fileContent = System.Text.Encoding.UTF8.GetString(buffer);
+    }
+
+    private async Task DownloadAsync()
+    {
+        string newFileContent = fileContent + " >>>>>>>>>Ende der Datei.<<<<<<<<<<";
+        byte[] buffer = System.Text.Encoding.UTF8.GetBytes(newFileContent);
+        ms = new MemoryStream(buffer);
+
+        // Erstelle die Datei über JavaScript
+        var fileUrl = await JSRuntime.InvokeAsync<string>("createObjectURL", ms.ToArray(), "download.txt");
+        await JSRuntime.InvokeVoidAsync("downloadFile", fileUrl, "download.txt");
+
     }
 }
