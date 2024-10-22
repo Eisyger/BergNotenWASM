@@ -1,0 +1,107 @@
+﻿@page "/import"
+@inject IJSRuntime JSRuntime
+@using BergNotenWASM.Model
+@using BergNotenWASM.Test
+
+<div class="d-flex flex-column align-items-center">
+    <h3>Importiere Teilnehmerdaten</h3>
+    <InputFile OnChange="ReadFileAsync" accept=".xls,.xlsx" class="form-control" />
+
+    @if (data.Count() != 0)
+    {
+        <table class="table m-4">
+            <thead>
+                <tr>
+                    <th>Vorname</th>
+                    <th>Nachname</th>
+                    <th>Geburtsdatum</th>
+                    <th>Verein</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var d in data)
+                {
+                    <tr>
+                        <td>
+                            <input type="text" value="@d.Vorname" onblur="saveChanges('@d.Vorname', 'Vorname', this.value)" />
+                        </td>
+                        <td>
+                            <input type="text" value="@d.Nachname" onblur="saveChanges('@d.Nachname', 'Nachname', this.value)" />
+                        </td>
+                        <td>
+                            <input type="date" value="@d.Geburtsdatum.ToString("yyyy-MM-dd")" onblur="saveChanges('@d.Vorname', 'Geburtsdatum', this.value)" />
+                        </td>
+                        <td>
+                            <input type="text" value="@d.Verein" onblur="saveChanges('@d.Vorname', 'Verein', this.value)" />
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+    else
+    {
+        <p>Keine Daten verfügbar.</p>
+    }
+
+
+    <input type="button" class="btn-primary m-4" value="Speichern" @onclick="DownloadAsync"/>
+</div>
+
+@code {
+    private IEnumerable<Teilnehmer> data = []; 
+
+    private async Task ReadFileAsync(InputFileChangeEventArgs e)
+    {
+        var file = e.File; // Die ausgewählte Datei
+        using var stream = file.OpenReadStream(maxAllowedSize: 1024 * 1024 * 10); // Max 10 MB
+
+        // Kopiere den Inhalt des Streams in einen MemoryStream
+        using var memoryStream = new MemoryStream();
+        await stream.CopyToAsync(memoryStream); // Asynchrones Kopieren des Streams
+        memoryStream.Position = 0; // Setze die Position des MemoryStreams zurück
+
+
+        var extension = e.File.Name.Split('.')[1];
+        data = ExcelIO.Import<Teilnehmer>(memoryStream, extension); // Übergib den MemoryStream an NPOI
+        if (data == null)
+        {
+            Console.WriteLine("Keine Daten gealden");
+        }
+        else
+        {
+            Console.WriteLine(data.Count());
+        }
+        StateHasChanged(); // UI neu rendern
+
+        //TODO Erst mal einen Test Export einer Muster Excel erstellen und dann den Import regeln!
+    }
+
+
+    private async Task DownloadAsync()
+    {
+            // Erzeuge den MemoryStream
+            var ms = ExcelIO.Export<Teilnehmer>(TestDownloadData.TestTeilnehmer);
+
+            if (ms.CanSeek)
+            {
+                Console.WriteLine($"In Import ist der Stream noch nicht geschlossen.");
+            }
+            else
+            {
+                Console.WriteLine($"In Import ist der Stream geschlossen.");
+            }
+           
+            var fileBytes = ms.ToArray();
+
+            // Erstelle die Datei über JavaScript
+            var fileUrl = await JSRuntime.InvokeAsync<string>("createObjectURL", fileBytes, "download.txt");
+
+            // Lade die Datei herunter
+            await JSRuntime.InvokeVoidAsync("downloadFile", fileUrl, "download.xlsx");
+        
+    }
+
+    
+
+}
