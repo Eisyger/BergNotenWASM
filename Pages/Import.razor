@@ -9,30 +9,32 @@
 
     @if (data.Count() != 0)
     {
-        <table class="table m-4">
+        <table class="table table-striped m-4">
             <thead>
                 <tr>
-                    <th>Vorname</th>
-                    <th>Nachname</th>
-                    <th>Geburtsdatum</th>
-                    <th>Verein</th>
+                    <th scope="col">#</th>
+                    <th scope="col">Vorname</th>
+                    <th scope="col">Nachname</th>
+                    <th scope="col">Geburtsdatum</th>
+                    <th scope="col">Verein</th>
                 </tr>
             </thead>
             <tbody>
-                @foreach (var d in data)
+                @for (var i = 0; i < data.Count(); i++)
                 {
                     <tr>
+                        <th scope="row">@(i+1)</th>
                         <td>
-                            <input type="text" value="@d.Vorname" onblur="saveChanges('@d.Vorname', 'Vorname', this.value)" />
+                            @(data[i].Vorname)
                         </td>
                         <td>
-                            <input type="text" value="@d.Nachname" onblur="saveChanges('@d.Nachname', 'Nachname', this.value)" />
+                            @(data[i].Nachname)
                         </td>
                         <td>
-                            <input type="date" value="@d.Geburtsdatum.ToString("yyyy-MM-dd")" onblur="saveChanges('@d.Vorname', 'Geburtsdatum', this.value)" />
+                            @(data[i].Geburtsdatum.ToString("dd.MM.yyyy"))
                         </td>
                         <td>
-                            <input type="text" value="@d.Verein" onblur="saveChanges('@d.Vorname', 'Verein', this.value)" />
+                            @(data[i].Verein)
                         </td>
                     </tr>
                 }
@@ -49,7 +51,8 @@
 </div>
 
 @code {
-    private IEnumerable<Teilnehmer> data = []; 
+    private List<Teilnehmer> data = [];
+    private int RowIndex = 0;
 
     private async Task ReadFileAsync(InputFileChangeEventArgs e)
     {
@@ -63,7 +66,7 @@
 
 
         var extension = e.File.Name.Split('.')[1];
-        data = ExcelIO.Import<Teilnehmer>(memoryStream, extension); // Übergib den MemoryStream an NPOI
+        data = ExcelIO.Import<Teilnehmer>(memoryStream, extension).ToList(); // Übergib den MemoryStream an NPOI
         if (data == null)
         {
             Console.WriteLine("Keine Daten gealden");

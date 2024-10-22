@@ -417,7 +417,7 @@ public class ExcelIO
         return cell.CellType switch
         {
             CellType.Boolean => cell.BooleanCellValue,
-            CellType.Numeric => cell.NumericCellValue,
+            CellType.Numeric => DateUtil.IsCellDateFormatted(cell) ? cell.DateCellValue : cell.NumericCellValue,
             CellType.String => cell.StringCellValue,
             CellType.Blank => null,
             _ => cell.ToString()
@@ -468,37 +468,37 @@ public class Helper
     /// <returns>Der konvertierte Wert, oder der Standardwert, wenn die Konvertierung nicht möglich ist.</returns>
     public static T Convert<T>(object? data, T defaultValue)
     {
-        // Überprüfen, ob der Eingabewert null ist
         if (data == null)
         {
             return defaultValue;
         }
 
-        // Switch über den Typ 'T'
         switch (Type.GetTypeCode(typeof(T)))
         {
             case TypeCode.String:
-                return (T)(object)data.ToString()!; // Konvertiere zu string
+                return (T)(object)data.ToString()!;
 
             case TypeCode.Double:
                 if (double.TryParse(data.ToString(), out var doubleResult))
                 {
-                    return (T)(object)doubleResult; // Konvertiere zu double
+                    return (T)(object)doubleResult;
                 }
                 return defaultValue;
 
             case TypeCode.Int32:
                 if (int.TryParse(data.ToString(), out var intResult))
                 {
-                    return (T)(object)intResult; // Konvertiere zu int32
+                    return (T)(object)intResult;
                 }
                 return defaultValue;
 
             case TypeCode.DateTime:
                 if (DateTime.TryParse(data.ToString(), out var dateResult))
                 {
-                    return (T)(object)dateResult; // Konvertiere zu DateTime
+                    return (T)(object)dateResult;
                 }
+                Console.WriteLine("DateTime ist:" + data.ToString());
+
                 return defaultValue;
 
             default:
