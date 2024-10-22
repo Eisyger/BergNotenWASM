@@ -9,7 +9,7 @@
 
     @if (data.Count() != 0)
     {
-        <table class="table table-striped m-4">
+        <table class="table table-striped table-bordered m-4 ">
             <thead>
                 <tr>
                     <th scope="col">#</th>
@@ -43,16 +43,39 @@
     }
     else
     {
-        <p>Keine Daten verfügbar.</p>
+        <p class="p-2">Keine Daten verfügbar.</p>
     }
 
+    @if (showConfirmation)
+    {
+        <div class="modal" style="display:block;">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Bestätigung</h5>
+                        <button type="button" class="btn btn-close" @onclick="ClosePopup"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p>Möchten Sie den Download wirklich starten?</p>
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn btn-primary" @onclick="ConfirmDownload">Ja</button>
+                        <button class="btn btn-secondary" @onclick="ClosePopup">Nein</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
 
-    <input type="button" class="btn-primary m-4" value="Speichern" @onclick="DownloadAsync"/>
+    <input type="button" class="btn btn-primary m-4" value="Speichern" @onclick="OpenConfirmationPopup" />
 </div>
+
+
 
 @code {
     private List<Teilnehmer> data = [];
     private int RowIndex = 0;
+    private bool showConfirmation = false;
 
     private async Task ReadFileAsync(InputFileChangeEventArgs e)
     {
@@ -105,6 +128,21 @@
         
     }
 
-    
+    private void OpenConfirmationPopup()
+    {
+        showConfirmation = true;
+    }
+
+    private void ClosePopup()
+    {
+        showConfirmation = false;
+    }
+
+    private async Task ConfirmDownload()
+    {
+        showConfirmation = false;
+        // Starte den Download, nachdem die Bestätigung erfolgt ist
+        await DownloadAsync();
+    }
 
 }
