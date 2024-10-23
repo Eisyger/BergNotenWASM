@@ -14,7 +14,7 @@ jobs:
   displayName: Build and Deploy Job
   condition: or(eq(variables['Build.Reason'], 'Manual'),or(eq(variables['Build.Reason'], 'PullRequest'),eq(variables['Build.Reason'], 'IndividualCI')))
   pool:
-    name: WinHostAgent
+    name: default
   variables:
   - group: Azure-Static-Web-Apps-green-plant-08b114703-variable-group
   steps:
