@@ -99,7 +99,7 @@ namespace BergNotenWASM.Model
 
         public int CompareTo(Teilnehmer? other)
         {
-            return this.ID.CompareTo(other.ID);
+            return this.ID.CompareTo(other?.ID);
         }
 
         public void SetData(Dictionary<string, object?> data)

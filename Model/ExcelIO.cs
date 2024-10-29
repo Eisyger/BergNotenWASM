@@ -10,13 +10,13 @@ namespace BergNotenWASM.Model;
 public class ExcelIO
 {
     #region Export
-    // Append ist das Standardverhalten. Ist ein Sheet mit gleichem Namen vorhanden wird das Sheet ersetzt.    
+    // Append ist das Standardverhalten. Ist ein Sheet mit gleichem Namen vorhanden, wird das Sheet ersetzt.
     public static void Export<T>(string filePath, IEnumerable<T> data, string? name = null, int offset = 0, string dateFormat = "dd.MM.yyyy")
     {
         IWorkbook? workbook = null;
         ISheet? sheet = null;
 
-        // Wird kein Name übergeben wird der Name des Klassentyps verwendet.
+        // Wird kein Name übergeben, wird der Name des Klassentyps verwendet.
         // So können auch Sheets des gleichen Datentyps erstellt werden.
         name ??= typeof(T).Name;
 
@@ -25,7 +25,7 @@ public class ExcelIO
         ArgumentNullException.ThrowIfNull(workbook, nameof(workbook));
         ArgumentNullException.ThrowIfNull(sheet, nameof(sheet));
 
-        // Erstelle Eine Liste aus den Eigenschaften, welche die Spalten darstellen
+        // Erstelle eine Liste aus den Eigenschaften, welche die Spalten darstellen
         var properties = GetPortableProperties<T>();
 
         // Definieren des Datumsformats für die Datumszeile
@@ -46,22 +46,22 @@ public class ExcelIO
 
     public static MemoryStream Export<T>(IEnumerable<T> data, string? name = null, int offset = 0, string dateFormat = "dd.MM.yyyy")
     {
-        // Wird kein Name übergeben wird der Name des Klassentyps verwendet.
+        // Wird kein Name übergeben, wird der Name des Klassentyps verwendet.
         // So können auch Sheets des gleichen Datentyps erstellt werden.
         name ??= typeof(T).Name;
 
-        IWorkbook? workbook = new XSSFWorkbook();
-        ISheet? sheet = workbook.CreateSheet(name);
+        var workbook = new XSSFWorkbook();
+        var sheet = workbook.CreateSheet(name);
 
         ArgumentNullException.ThrowIfNull(workbook, nameof(workbook));
         ArgumentNullException.ThrowIfNull(sheet, nameof(sheet));
 
-        // Erstelle Eine Liste aus den Eigenschaften, welche die Spalten darstellen
+        // Erstelle eine Liste aus den Eigenschaften, welche die Spalten darstellen
         var properties = GetPortableProperties<T>();
 
         // Definieren des Datumsformats für die Datumszeile
-        ICellStyle? dateCellStyle = workbook.CreateCellStyle();
-        short dataFormat = workbook.CreateDataFormat().GetFormat(dateFormat);
+        var dateCellStyle = workbook.CreateCellStyle();
+        var dataFormat = workbook.CreateDataFormat().GetFormat(dateFormat);
         dateCellStyle.DataFormat = dataFormat;
 
         // Erstelle die erste Zeile der Tabelle
@@ -72,13 +72,13 @@ public class ExcelIO
 
         var ms = new MemoryStream();
         workbook.Write(ms);
-        //ms ist nun geschlossen, daher wird der Stream Kopiert und somit neu geöffnet
+        //ms ist nun geschlossen, daher wird der Stream kopiert und somit neu geöffnet
         var copyStream = new MemoryStream(ms.ToArray());
 
         return copyStream;
     }
 
-    public static void ExportAll(string filePath, IEnumerable<IEnumerable<IXPortable>> data)
+    public static async void ExportAll(string filePath, IEnumerable<IEnumerable<IXPortable>> data)
     {
         var tasks = new List<Task>();
         object lockObj = new();
@@ -87,33 +87,32 @@ public class ExcelIO
         foreach (var sheet in data)
         {
             var elementType = sheet.FirstOrDefault()?.GetType();
-            if (elementType != null)
+            if (elementType == null) continue;
+            
+            // Cache die Methode für den Typ, um die Reflection nur einmal pro Typ auszuführen
+            if (!methodCache.TryGetValue(elementType, out var methodInfo))
             {
-                // Cache die Methode für den Typ, um die Reflection nur einmal pro Typ auszuführen
-                if (!methodCache.TryGetValue(elementType, out var methodInfo))
-                {
-                    methodInfo = typeof(ExcelIO)
-                        .GetMethod("Export")?
-                        .MakeGenericMethod(elementType);
-                    // In das Cache speichern
-                    methodCache[elementType] = methodInfo!;
-                }
-
-                var task = Task.Run(() =>
-                {
-                    // Hier das Lock verwenden, da mit dem Aufruf Invoke in die Excel geschrieben wird
-                    // -> paralleles schreiben, eher schlecht 
-                    lock (lockObj)
-                    {
-                        methodInfo?.Invoke(null, [filePath, sheet, null, 0, "dd.MM.yyyy"]);
-                    }
-                });
-
-                tasks.Add(task);
+                methodInfo = typeof(ExcelIO)
+                    .GetMethod("Export")?
+                    .MakeGenericMethod(elementType);
+                // In den Cache speichern
+                methodCache[elementType] = methodInfo!;
             }
+
+            var task = Task.Run(() =>
+            {
+                // Hier das Lock verwenden, da mit dem Aufruf Invoke in die Excel geschrieben wird
+                // → paralleles schreiben, eher schlecht 
+                lock (lockObj)
+                {
+                    methodInfo?.Invoke(null, [filePath, sheet, null, 0, "dd.MM.yyyy"]);
+                }
+            });
+
+            tasks.Add(task);
         }
         // Warten, bis alle Tasks abgeschlossen sind
-        Task.WaitAll([.. tasks]);
+        await Task.WhenAll(tasks);
     }
 
     private static void CreateDocument(ref IWorkbook? workbook, ref ISheet? sheet, string name, string filePath)
@@ -130,14 +129,13 @@ public class ExcelIO
             workbook = GetWorkbook(filePath);
             sheet = workbook.CreateSheet(name);
         }
-
     }
 
     private static ISheet? GetSheet(IWorkbook? workbook, string name)
     {
         ArgumentNullException.ThrowIfNull(workbook);
 
-        int index = workbook.GetSheetIndex(name);
+        var index = workbook.GetSheetIndex(name);
 
         if (index != -1)
         {
@@ -178,7 +176,7 @@ public class ExcelIO
 
     private static IWorkbook GetWorkbook(string filePath)
     {
-        // Wähle das Workbook basierend auf der Dateiendung aus        
+        // Wähle das Workbook basierend auf der Dateiendung aus
         if (Path.GetExtension(filePath).Equals(".xls", StringComparison.CurrentCultureIgnoreCase))
         {
             // .xls
@@ -198,13 +196,13 @@ public class ExcelIO
     private static void InsertData<T>(ISheet sheet, IEnumerable<T> data, PropertyInfo[] properties, ICellStyle dateCellStyle, int startRowIndex)
     {
         // Durchlaufe alle Elemente der Daten
-        for (int i = 0; i < Len(data); i++)
+        for (var i = 0; i < Len(data); i++)
         {
             // Erstelle eine Row            
-            IRow? row = sheet.CreateRow(i + startRowIndex);
+            var row = sheet.CreateRow(i + startRowIndex);
 
             // Durchlaufe alle Properties und füge sie der Row hinzu
-            for (int j = 0; j < properties.Length; j++)
+            for (var j = 0; j < properties.Length; j++)
             {
                 // Erstelle den Zellenwert 
                 object? value = properties[j].GetValue(data.ElementAt(i));
@@ -233,27 +231,21 @@ public class ExcelIO
 
     private static int Len<T>(IEnumerable<T> data)
     {
-        if (data is T[] array)
+        return data switch
         {
-            return array.Length;
-        }
-        else if (data is ICollection<T> collection)
-        {
-            return collection.Count;
-        }
-        else
-        {
-            return data.Count();
-        }
+            T[] array => array.Length,
+            ICollection<T> collection => collection.Count,
+            _ => data.Count()
+        };
     }
 
     private static void CreateHeaderRow(ISheet sheet, PropertyInfo[] properties, int startRowIndex)
     {
-        // Erstelle die Erste Row mit den Header Daten        
+        // Erstelle die Erste Row mit den Header Daten
         var headerRow = sheet.CreateRow(startRowIndex);
 
         // Durchlaufe alle Properties
-        for (int i = 0; i < properties.Length; i++)
+        for (var i = 0; i < properties.Length; i++)
         {
             // Füge der headRow Zellen mit dem Property Namen hinzu
             headerRow.CreateCell(i).SetCellValue(properties[i].Name);
@@ -265,11 +257,11 @@ public class ExcelIO
         // Hole alle Eingeschaften aus 'T' die das Attribut 'XPortablePropertyAttribute' definieren
         return typeof(T).GetProperties()
             .Where(p => p.IsDefined(typeof(XPortablePropertyAttribute), true) &&
-            IsNPOICompatible(p.PropertyType))
+            IsNpoiCompatible(p.PropertyType))
             .ToArray();
     }
 
-    private static bool IsNPOICompatible(Type propertyType)
+    private static bool IsNpoiCompatible(Type propertyType)
     {
         // Prüfen, ob der Datentyp kompatibel mit NPOI ist
         return propertyType == typeof(string) ||

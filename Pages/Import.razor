@@ -1,5 +1,5 @@
 ﻿@page "/import"
-@inject IJSRuntime JSRuntime
+@inject IJSRuntime JsRuntime
 @using BergNotenWASM.Model
 @using BergNotenWASM.Test
 
@@ -46,7 +46,7 @@
         <p class="p-2">Keine Daten verfügbar.</p>
     }
 
-    @if (showConfirmation)
+    @if (_showConfirmation)
     {
         <div class="modal" style="display:block;">
             <div class="modal-dialog">
@@ -74,13 +74,12 @@
 
 @code {
     private List<Teilnehmer> data = [];
-    private int RowIndex = 0;
-    private bool showConfirmation = false;
+    private bool _showConfirmation = false;
 
     private async Task ReadFileAsync(InputFileChangeEventArgs e)
     {
         var file = e.File; // Die ausgewählte Datei
-        using var stream = file.OpenReadStream(maxAllowedSize: 1024 * 1024 * 10); // Max 10 MB
+        await using var stream = file.OpenReadStream(maxAllowedSize: 1024 * 1024 * 10); // Max 10 MB
 
         // Kopiere den Inhalt des Streams in einen MemoryStream
         using var memoryStream = new MemoryStream();
@@ -90,14 +89,7 @@
 
         var extension = e.File.Name.Split('.')[1];
         data = ExcelIO.Import<Teilnehmer>(memoryStream, extension).ToList(); // Übergib den MemoryStream an NPOI
-        if (data == null)
-        {
-            Console.WriteLine("Keine Daten gealden");
-        }
-        else
-        {
-            Console.WriteLine(data.Count());
-        }
+        Console.WriteLine(data.Count());
         StateHasChanged(); // UI neu rendern
 
         //TODO Erst mal einen Test Export einer Muster Excel erstellen und dann den Import regeln!
@@ -109,38 +101,31 @@
             // Erzeuge den MemoryStream
             var ms = ExcelIO.Export<Teilnehmer>(TestDownloadData.TestTeilnehmer);
 
-            if (ms.CanSeek)
-            {
-                Console.WriteLine($"In Import ist der Stream noch nicht geschlossen.");
-            }
-            else
-            {
-                Console.WriteLine($"In Import ist der Stream geschlossen.");
-            }
-           
+            Console.WriteLine(ms.CanSeek ? $"In Import ist der Stream noch nicht geschlossen." : $"In Import ist der Stream geschlossen.");
+
             var fileBytes = ms.ToArray();
 
             // Erstelle die Datei über JavaScript
-            var fileUrl = await JSRuntime.InvokeAsync<string>("createObjectURL", fileBytes, "download.txt");
+            var fileUrl = await JsRuntime.InvokeAsync<string>("createObjectURL", fileBytes, "download.txt");
 
             // Lade die Datei herunter
-            await JSRuntime.InvokeVoidAsync("downloadFile", fileUrl, "download.xlsx");
+            await JsRuntime.InvokeVoidAsync("downloadFile", fileUrl, "download.xlsx");
         
     }
 
     private void OpenConfirmationPopup()
     {
-        showConfirmation = true;
+        _showConfirmation = true;
     }
 
     private void ClosePopup()
     {
-        showConfirmation = false;
+        _showConfirmation = false;
     }
 
     private async Task ConfirmDownload()
     {
-        showConfirmation = false;
+        _showConfirmation = false;
         // Starte den Download, nachdem die Bestätigung erfolgt ist
         await DownloadAsync();
     }

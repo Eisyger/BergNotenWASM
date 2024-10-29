@@ -6,10 +6,10 @@ namespace BergNotenWASM.Model
     {
         #region Properties  
         //[Indexed]
-        public int ID_Participant { get; set; }
+        public int IdParticipant { get; set; }
 
         //[Indexed]
-        public int ID_Exam { get; set; }
+        public int IdExam { get; set; }
 
         //[MaxLength(10)]
         public string Note { get; set; }
@@ -18,10 +18,10 @@ namespace BergNotenWASM.Model
         public string Bemerkung { get; set; }
 
         //[Ignore]
-        public Teilnehmer Participant { get; set; }
+        public Teilnehmer? Participant { get; set; }
 
         //[Ignore]
-        public Pruefungen Exam { get; set; }
+        public Pruefungen? Exam { get; set; }
         #endregion
 
         /// <summary>
@@ -29,8 +29,8 @@ namespace BergNotenWASM.Model
         /// </summary>
         public Noten()
         {
-            ID_Participant = 0;
-            ID_Exam = 0;
+            IdParticipant = 0;
+            IdExam = 0;
             Note = "-";
             Bemerkung = string.Empty;
             Participant = null;
@@ -45,8 +45,8 @@ namespace BergNotenWASM.Model
             Participant = participant;
             Exam = exam;
 
-            ID_Exam = Exam?.ID ?? -1;
-            ID_Participant = Participant?.ID ?? -1;
+            IdExam = Exam?.ID ?? -1;
+            IdParticipant = Participant?.ID ?? -1;
         }
 
         public override List<PropertyInfo> GetProperties()
