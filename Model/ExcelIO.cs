@@ -1,7 +1,6 @@
 ﻿using NPOI.HSSF.UserModel;
 using NPOI.SS.UserModel;
 using NPOI.XSSF.UserModel;
-using System.Data;
 using System.Reflection;
 
 
@@ -13,14 +12,11 @@ public class ExcelIO
     // Append ist das Standardverhalten. Ist ein Sheet mit gleichem Namen vorhanden, wird das Sheet ersetzt.
     public static void Export<T>(string filePath, IEnumerable<T> data, string? name = null, int offset = 0, string dateFormat = "dd.MM.yyyy")
     {
-        IWorkbook? workbook = null;
-        ISheet? sheet = null;
-
         // Wird kein Name übergeben, wird der Name des Klassentyps verwendet.
         // So können auch Sheets des gleichen Datentyps erstellt werden.
         name ??= typeof(T).Name;
 
-        CreateDocument(ref workbook, ref sheet, name, filePath);
+        CreateDocument(out var workbook, out var sheet, name, filePath);
 
         ArgumentNullException.ThrowIfNull(workbook, nameof(workbook));
         ArgumentNullException.ThrowIfNull(sheet, nameof(sheet));
@@ -36,7 +32,7 @@ public class ExcelIO
         // Erstelle die erste Zeile der Tabelle
         CreateHeaderRow(sheet, properties, 0 + offset);
 
-        // Füge die Daten in die Tabell ein
+        // Füge die Daten in die Tabelle ein
         InsertData(sheet, data, properties, dateCellStyle, 1 + offset);
 
         // Speichere die Daten in einer Datei
@@ -67,7 +63,7 @@ public class ExcelIO
         // Erstelle die erste Zeile der Tabelle
         CreateHeaderRow(sheet, properties, 0 + offset);
 
-        // Füge die Daten in die Tabell ein
+        // Füge die Daten in die Tabelle ein
         InsertData(sheet, data, properties, dateCellStyle, 1 + offset);
 
         var ms = new MemoryStream();
@@ -115,7 +111,7 @@ public class ExcelIO
         await Task.WhenAll(tasks);
     }
 
-    private static void CreateDocument(ref IWorkbook? workbook, ref ISheet? sheet, string name, string filePath)
+    private static void CreateDocument(out IWorkbook? workbook, out ISheet? sheet, string name, string filePath)
     {
         if (File.Exists(filePath))
         {
@@ -139,15 +135,15 @@ public class ExcelIO
 
         if (index != -1)
         {
-            // Wenn der Name als Tabelleblatt existiert lösche das Tabellenblatt
+            // Wenn der Name als Tabellenblatt existiert lösche das Tabellenblatt
             workbook.RemoveSheetAt(index);
         }
 
-        // Erstelle ein neues Tabelleblatt in dem Workbook
+        // Erstelle ein neues Tabellenblatt in dem Workbook
         return workbook.CreateSheet(name);
     }
 
-    private static IWorkbook? OpenWorkbook(string filePath)
+    private static IWorkbook OpenWorkbook(string filePath)
     {
         if (File.Exists(filePath))
         {
@@ -193,8 +189,9 @@ public class ExcelIO
         }
     }
 
-    private static void InsertData<T>(ISheet sheet, IEnumerable<T> data, PropertyInfo[] properties, ICellStyle dateCellStyle, int startRowIndex)
+    private static void InsertData<T>(ISheet sheet, IEnumerable<T> enumerable, PropertyInfo[] properties, ICellStyle dateCellStyle, int startRowIndex)
     {
+        var data = enumerable.ToList();
         // Durchlaufe alle Elemente der Daten
         for (var i = 0; i < Len(data); i++)
         {
@@ -205,8 +202,8 @@ public class ExcelIO
             for (var j = 0; j < properties.Length; j++)
             {
                 // Erstelle den Zellenwert 
-                object? value = properties[j].GetValue(data.ElementAt(i));
-                string? cellvalue = value != null ? value.ToString() : string.Empty;
+                var value = properties[j].GetValue(data.ElementAt(i));
+                var cellValue = value != null ? value.ToString() : string.Empty;
 
                 if (value is DateTime dateTime)
                 {
@@ -215,7 +212,7 @@ public class ExcelIO
                     cell.CellStyle = dateCellStyle;
                     cell.SetCellValue(dateTime);
                 }
-                else if (double.TryParse(cellvalue, out double number))
+                else if (double.TryParse(cellValue, out double number))
                 {
                     // Wert ist eine Zahl
                     row.CreateCell(j).SetCellValue(number);
@@ -223,7 +220,7 @@ public class ExcelIO
                 else
                 {
                     // Wert ist ein Text
-                    row.CreateCell(j).SetCellValue(cellvalue);
+                    row.CreateCell(j).SetCellValue(cellValue);
                 }
             }
         }
@@ -254,7 +251,7 @@ public class ExcelIO
 
     private static PropertyInfo[] GetPortableProperties<T>()
     {
-        // Hole alle Eingeschaften aus 'T' die das Attribut 'XPortablePropertyAttribute' definieren
+        // Hole alle Eigenschaften aus 'T' die das Attribut 'XPortablePropertyAttribute' definieren
         return typeof(T).GetProperties()
             .Where(p => p.IsDefined(typeof(XPortablePropertyAttribute), true) &&
             IsNpoiCompatible(p.PropertyType))
@@ -277,14 +274,14 @@ public class ExcelIO
     {
 
         // Lade Workbook und Lade das Sheet mit dem gewünschten Type
-        IWorkbook? workbook = OpenWorkbook(filePath);
-        ISheet? sheet = LoadSheet(workbook, typeof(TResult).Name);
+        var workbook = OpenWorkbook(filePath);
+        var sheet = LoadSheet(workbook, typeof(TResult).Name);
 
         if (sheet == null)
             return [];
 
-        // Ermittle die Properties welche gealden werden können
-        PropertyInfo[] properties = GetPortableProperties<TResult>();
+        // Ermittle die Properties welche geladen werden können
+        var properties = GetPortableProperties<TResult>();
 
         // Lade die Daten aus dem Sheet
         var data = GetData(sheet, properties, offset);
@@ -294,7 +291,7 @@ public class ExcelIO
         foreach (var d in data)
         {
             TResult t = new();
-            // SetData wird vom Interface IXportable definiert, welches die Properties der Instanz initialisiert
+            // SetData wird vom Interface IXPortable definiert, welches die Properties der Instanz initialisiert
             t.SetData(d);
             result.Add(t);
 
@@ -305,32 +302,31 @@ public class ExcelIO
     public static IEnumerable<TResult> Import<TResult>(Stream? stream, string extension, int offset = 0) where TResult : IXPortable, new()
     {
         // Lade Workbook und Lade das Sheet mit dem gewünschten Type
-        IWorkbook? workbook = null;
+        IWorkbook workbook;
 
 
-        if (extension == "xls")
+        switch (extension)
         {
-            workbook = new HSSFWorkbook(stream);
-            Console.WriteLine("Workbook ist ein 'xls'");
-        }
-        else if (extension == "xlsx")
-        {
-            workbook = new XSSFWorkbook(stream);
-            Console.WriteLine("Workbook ist ein 'xlsx'");
-        }
-        else
-        {
-            throw new NotSupportedException($"Die Dateierweiterung zum laden der Exceldatei wird nicht unterstützt: '{extension}'");
+            case "xls":
+                workbook = new HSSFWorkbook(stream);
+                Console.WriteLine("Workbook ist ein 'xls'");
+                break;
+            case "xlsx":
+                workbook = new XSSFWorkbook(stream);
+                Console.WriteLine("Workbook ist ein 'xlsx'");
+                break;
+            default:
+                throw new NotSupportedException($"Die Dateierweiterung zum laden der Exceldatei wird nicht unterstützt: '{extension}'");
         }
 
-        ISheet? sheet = LoadSheet(workbook, typeof(TResult).Name);
+        var sheet = LoadSheet(workbook, typeof(TResult).Name);
         Console.WriteLine($"Sheet wurde geladen aus dem Blatt '{typeof(TResult).Name}'.");
 
         if (sheet == null)
             return [];
 
-        // Ermittle die Properties welche gealden werden können
-        PropertyInfo[] properties = GetPortableProperties<TResult>();
+        // Ermittle die Properties welche geladen werden können
+        var properties = GetPortableProperties<TResult>();
 
         // Lade die Daten aus dem Sheet
         var data = GetData(sheet, properties, offset);
@@ -340,7 +336,7 @@ public class ExcelIO
         foreach (var d in data)
         {
             TResult t = new();
-            // SetData wird vom Interface IXportable definiert, welches die Properties der Instanz initialisiert
+            // SetData wird vom Interface IXPortable definiert, welches die Properties der Instanz initialisiert
             t.SetData(d);
             result.Add(t);
 
@@ -433,15 +429,12 @@ public class ExcelIO
 [AttributeUsage(AttributeTargets.Property, AllowMultiple = false, Inherited = false)]
 public class XPortablePropertyAttribute : Attribute
 {
-    public XPortablePropertyAttribute()
-    {
-    }
 }
 
 public interface IXPortable
 {
     /// <summary>
-    /// Weise in dieser Mehtode den Eigenschaften deiner Klasse, welche das XPortable Attribut definieren
+    /// Weise in dieser Methode den Eigenschaften deiner Klasse, welche das XPortable Attribut definieren
     /// Werte aus dem Dictionary zu. Key = nameof(Property).
     /// </summary>
     /// <param name="data"></param>
@@ -489,7 +482,7 @@ public class Helper
                 {
                     return (T)(object)dateResult;
                 }
-                Console.WriteLine("DateTime ist:" + data.ToString());
+                Console.WriteLine("DateTime ist:" + data);
 
                 return defaultValue;
 
