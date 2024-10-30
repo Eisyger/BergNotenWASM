@@ -45,8 +45,8 @@ namespace BergNotenWASM.Model
             Participant = participant;
             Exam = exam;
 
-            IdExam = Exam?.ID ?? -1;
-            IdParticipant = Participant?.ID ?? -1;
+            IdExam = Exam?.Id ?? -1;
+            IdParticipant = Participant?.Id ?? -1;
         }
 
         public override List<PropertyInfo> GetProperties()

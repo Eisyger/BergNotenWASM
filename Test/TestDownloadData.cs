@@ -17,7 +17,65 @@ namespace BergNotenWASM.Test
             new() { Vorname = "Robert", Nachname = "Downey Jr.", Geburtsdatum = new DateTime(1965, 4, 4), Verein = "Iron Man Legends" },
             new() { Vorname = "Chris", Nachname = "Hemsworth", Geburtsdatum = new DateTime(1983, 8, 11), Verein = "Thor's Warriors" }
         ];
-
+        
+        public static readonly List<Pruefungen> TestPruefungen =
+        [
+            new()
+            {
+                Name = "Grundschwung",
+                Beschreibung = "Prüfung des Grundschwungs auf blauen Pisten, Fokus auf Technik und Stabilität."
+            },
+            new()
+            {
+                Name = "Schrägfahrt",
+                Beschreibung =
+                    "Schrägfahrt-Prüfung für das Gleichgewicht und die Kanteneinstellung auf mittleren Hängen."
+            },
+            new()
+            {
+                Name = "Parallelschwung",
+                Beschreibung = "Prüfung des Parallelschwungs auf roten Pisten mit Fokus auf Kontrolle und Rhythmus."
+            },
+            new()
+            {
+                Name = "Kanteneinsatz",
+                Beschreibung =
+                    "Prüfung des präzisen Kanteneinsatzes auf anspruchsvollen Pisten, Bewertung der Genauigkeit und Balance."
+            },
+            new()
+            {
+                Name = "Carving",
+                Beschreibung = "Carving-Prüfung auf harten Pisten, Geschwindigkeit und Technik werden geprüft."
+            },
+            new()
+            {
+                Name = "Buckelpisten",
+                Beschreibung = "Prüfung auf Buckelpisten, bewertet werden Rhythmus und Körperspannung."
+            },
+            new()
+            {
+                Name = "Kurvenfahren",
+                Beschreibung =
+                    "Kurventechnik auf schmalen, steilen Pisten, Schwerpunkt auf Kontrolle und Belastungswechsel."
+            },
+            new()
+            {
+                Name = "Off-Piste",
+                Beschreibung =
+                    "Off-Piste-Technik auf tief verschneiten Hängen, Prüfung auf Anpassung und Geländebeherrschung."
+            },
+            new()
+            {
+                Name = "Schussfahrt",
+                Beschreibung =
+                    "Sicherheitsprüfung der Schussfahrt auf einer geraden Piste, Augenmerk auf Körperhaltung und Bremsfähigkeit."
+            },
+            new()
+            {
+                Name = "Freestyle-Skiing",
+                Beschreibung = "Freestyle-Prüfung mit Sprüngen und Tricks, Fokus auf Kreativität und Körperkontrolle."
+            }
+        ];
 
     }
 }

@@ -28,10 +28,10 @@ namespace BergNotenWASM.Model
         /// </summary>
         public Teilnehmer()
         {
-            Vorname = String.Empty;
-            Nachname = String.Empty;
+            Vorname = string.Empty;
+            Nachname = string.Empty;
             Geburtsdatum = DateTime.Today;
-            Verein = String.Empty;
+            Verein = string.Empty;
         }
         /// <summary>
         /// Erstellt eine neue Instanz der Teilnehmer-Klasse.
@@ -82,15 +82,15 @@ namespace BergNotenWASM.Model
         /// <returns>Der berechnete Hashcode.</returns>
         public override int GetHashCode()
         {
-            return HashCode.Combine(ID, Vorname, Nachname, Geburtsdatum, Verein);
+            return HashCode.Combine(Id, Vorname, Nachname, Geburtsdatum, Verein);
         }
 
         public override List<PropertyInfo> GetProperties()
         {
             var l = typeof(Teilnehmer).GetProperties().ToList();
-            // Füge das letzt Element an erster Stelle ein.
+            // Füge das letzte Element an erster Stelle ein.
             // Das letzte Element des Arrays ist die ID, da die ID in dem Konstruktor der Basisklasse,
-            // nach dem Aufruf der vererbten Klasse, aufgerufen wird.            
+            // nach dem Aufruf der vererbten Klasse, aufgerufen wird.
             l.Insert(0, l[^1]);
             l.RemoveAt(l.Count - 1);
 
@@ -99,7 +99,7 @@ namespace BergNotenWASM.Model
 
         public int CompareTo(Teilnehmer? other)
         {
-            return this.ID.CompareTo(other?.ID);
+            return this.Id.CompareTo(other?.Id);
         }
 
         public void SetData(Dictionary<string, object?> data)
@@ -108,8 +108,13 @@ namespace BergNotenWASM.Model
             Nachname = Helper.Convert<string>(data[nameof(Nachname)], string.Empty);
             Geburtsdatum = Helper.Convert<DateTime>(data[nameof(Geburtsdatum)], DateTime.Today);
             Verein = Helper.Convert<string>(data[nameof(Verein)], string.Empty);
-            if (data.TryGetValue(nameof(ID), out object? id))
-                ID = Helper.Convert<int>(id, -1);
+            if (data.TryGetValue(nameof(Id), out var id))
+                Id = Helper.Convert<int>(id, -1);
+        }
+
+        public string GetName()
+        {
+            return nameof(Teilnehmer);
         }
     }
 }

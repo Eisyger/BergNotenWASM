@@ -5,14 +5,15 @@ namespace BergNotenWASM.Model
     /// <summary>
     /// Stellt eine Name dar.
     /// </summary>
-    public class Pruefungen : TableData
+    public class Pruefungen : TableData, IXPortable
     {
-        #region Properties       
-
+        #region Properties 
         //[MaxLength(100)]
+        [XPortableProperty]
         public string Name { get; set; }
 
         //[MaxLength(500)]
+        [XPortableProperty]
         public string Beschreibung { get; set; }
         #endregion
 
@@ -25,12 +26,13 @@ namespace BergNotenWASM.Model
             Beschreibung = string.Empty;
         }
 
+        
         /// <summary>
         /// Überprüft, ob ein Prüfungs-Objekt Daten enthält.
-        /// Eine Name gilt als nicht leer, wenn das Feld 'Name' einen Wert enthält.
+        /// Eine Prüfung gilt als nicht leer, wenn das Feld 'Name' einen Wert enthält.
         /// </summary>
-        /// <param name="exam">Die zu prüfende Name.</param>
-        /// <returns>True, wenn die Name Daten enthält, ansonsten False.</returns>
+        /// <param name="exam">Die zu prüfende Prüfung.</param>
+        /// <returns>True, wenn das Feld Name Daten enthält, ansonsten False.</returns>
         public static bool IsNotEmpty(Pruefungen exam)
         {
             return !string.IsNullOrWhiteSpace(exam.Name);
@@ -61,15 +63,26 @@ namespace BergNotenWASM.Model
         /// <returns>Der berechnete Hashcode.</returns>
         public override int GetHashCode()
         {
-            return HashCode.Combine(ID, Name, Beschreibung);
+            return HashCode.Combine(Id, Name, Beschreibung);
+        }
+
+        public void SetData(Dictionary<string, object?> data)
+        {
+            Name = Helper.Convert<string>(data[nameof(Name)], "");
+            Beschreibung = Helper.Convert<string>(data[nameof(Beschreibung)], "");
+        }
+
+        public string GetName()
+        {
+            return nameof(Pruefungen);
         }
 
         public override List<PropertyInfo> GetProperties()
         {
             var l = typeof(Pruefungen).GetProperties().ToList();
-            // Füge das letzt Element an erster Stelle ein.
+            // Füge das letzte Element an erster Stelle ein.
             // Das letzte Element des Arrays ist die ID, da die ID in dem Konstruktor der Basisklasse,
-            // nach dem Aufruf der vererbten Klasse, aufgerufen wird.            
+            // nach dem Aufruf der vererbten Klasse, aufgerufen wird.
             l.Insert(0, l[^1]);
             l.RemoveAt(l.Count - 1);
 

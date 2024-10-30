@@ -2,42 +2,69 @@
 @inject IJSRuntime JsRuntime
 @using BergNotenWASM.Model
 @using BergNotenWASM.Test
+@using NPOI.XSSF.UserModel
 
 <div class="d-flex flex-column align-items-center">
     <h3>Importiere Teilnehmerdaten</h3>
     <InputFile OnChange="ReadFileAsync" accept=".xls,.xlsx" class="form-control" />
 
-    @if (data.Count() != 0)
+    @if (_teilnehmerData.Count() != 0)
     {
         <table class="table table-striped table-bordered m-4 ">
             <thead>
-                <tr>
-                    <th scope="col">#</th>
-                    <th scope="col">Vorname</th>
-                    <th scope="col">Nachname</th>
-                    <th scope="col">Geburtsdatum</th>
-                    <th scope="col">Verein</th>
-                </tr>
+            <tr>
+                <th scope="col">#</th>
+                <th scope="col">Vorname</th>
+                <th scope="col">Nachname</th>
+                <th scope="col">Geburtsdatum</th>
+                <th scope="col">Verein</th>
+            </tr>
             </thead>
             <tbody>
-                @for (var i = 0; i < data.Count(); i++)
-                {
-                    <tr>
-                        <th scope="row">@(i+1)</th>
-                        <td>
-                            @(data[i].Vorname)
-                        </td>
-                        <td>
-                            @(data[i].Nachname)
-                        </td>
-                        <td>
-                            @(data[i].Geburtsdatum.ToString("dd.MM.yyyy"))
-                        </td>
-                        <td>
-                            @(data[i].Verein)
-                        </td>
-                    </tr>
-                }
+            @for (var i = 0; i < _teilnehmerData.Count(); i++)
+            {
+                <tr>
+                    <th scope="row">@(i + 1)</th>
+                    <td>
+                        @(_teilnehmerData[i].Vorname)
+                    </td>
+                    <td>
+                        @(_teilnehmerData[i].Nachname)
+                    </td>
+                    <td>
+                        @(_teilnehmerData[i].Geburtsdatum.ToString("dd.MM.yyyy"))
+                    </td>
+                    <td>
+                        @(_teilnehmerData[i].Verein)
+                    </td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    }
+    @if (_pruefungsData.Count() != 0)
+    {
+    <table class="table table-striped table-bordered m-4 ">
+            <thead>
+            <tr>
+                <th scope="col">#</th>
+                <th scope="col">Name</th>
+                <th scope="col">Beschreibung</th>
+            </tr>
+            </thead>
+            <tbody>
+            @for (var i = 0; i < _pruefungsData.Count(); i++)
+            {
+                <tr>
+                    <th scope="row">@(i+1)</th>
+                    <td>
+                        @(_pruefungsData[i].Name)
+                    </td>
+                    <td>
+                        @(_pruefungsData[i].Beschreibung)
+                    </td>
+                </tr>
+            }
             </tbody>
         </table>
     }
@@ -67,49 +94,74 @@
         </div>
     }
 
-    <input type="button" class="btn btn-primary m-4" value="Speichern" @onclick="OpenConfirmationPopup" />
+    <input type="button" class="btn btn-primary m-4" value="Download Testdaten" @onclick="OpenConfirmationPopup" />
 </div>
 
 
 
 @code {
-    private List<Teilnehmer> data = [];
-    private bool _showConfirmation = false;
+    private List<Teilnehmer> _teilnehmerData = [];
+    private List<Pruefungen> _pruefungsData = [];
+    private bool _showConfirmation;
 
+    #region LoadData
     private async Task ReadFileAsync(InputFileChangeEventArgs e)
     {
         var file = e.File; // Die ausgewählte Datei
         await using var stream = file.OpenReadStream(maxAllowedSize: 1024 * 1024 * 10); // Max 10 MB
 
-        // Kopiere den Inhalt des Streams in einen MemoryStream
-        using var memoryStream = new MemoryStream();
-        await stream.CopyToAsync(memoryStream); // Asynchrones Kopieren des Streams
-        memoryStream.Position = 0; // Setze die Position des MemoryStreams zurück
-
+        // Kopiere den Inhalt des Streams in ein Byte-Array
+        var data = new byte[stream.Length];
+        @(await stream.ReadAsync(data.AsMemory(0, (int)stream.Length)))
 
         var extension = e.File.Name.Split('.')[1];
-        data = ExcelIO.Import<Teilnehmer>(memoryStream, extension).ToList(); // Übergib den MemoryStream an NPOI
-        Console.WriteLine(data.Count());
-        StateHasChanged(); // UI neu rendern
 
-        //TODO Erst mal einen Test Export einer Muster Excel erstellen und dann den Import regeln!
+        // Erstelle zwei separate MemoryStreams aus dem Byte-Array
+        // NPOI schließt den Stream, daher muss jedes Mal, wenn aus einem Stream ein Workbook erstellt wird
+        // ein neuer Stream erstellt werden.
+        using var memoryStream1 = new MemoryStream(data);
+        using var memoryStream2 = new MemoryStream(data);
+
+        // Setze die Position der MemoryStreams zurück
+        memoryStream1.Position = 0; 
+        memoryStream2.Position = 0; 
+
+        // Importiere die Daten für Teilnehmer
+        _teilnehmerData = ExcelIO.Import<Teilnehmer>(memoryStream1, extension).ToList();
+    
+        // Importiere die Daten für Prüfungen
+        _pruefungsData = ExcelIO.Import<Pruefungen>(memoryStream2, extension).ToList();
+
+        Console.WriteLine(_teilnehmerData.Count());
+        Console.WriteLine(_pruefungsData.Count());
+    
+        StateHasChanged(); // UI neu rendern
     }
 
+    #endregion
 
+    #region DownloadData
     private async Task DownloadAsync()
     {
-            // Erzeuge den MemoryStream
-            var ms = ExcelIO.Export<Teilnehmer>(TestDownloadData.TestTeilnehmer);
+        var builder = new ExcelIO.WoorkbookBuilder();
+        builder.SetData(TestDownloadData.TestTeilnehmer, nameof(Teilnehmer));
+        builder.SetData(TestDownloadData.TestPruefungen, nameof(Pruefungen));
+        builder.SetDateTimeFormat("dd-MM-yyyy");
+        
+        // Erzeuge den MemoryStream
+        var ms = ExcelIO.ExportWorkbook(builder.Build(new XSSFWorkbook()));
+        
+        Console.WriteLine(ms.CanSeek 
+            ? $"In Import ist der Stream noch nicht geschlossen." 
+            : $"In Import ist der Stream geschlossen.");
 
-            Console.WriteLine(ms.CanSeek ? $"In Import ist der Stream noch nicht geschlossen." : $"In Import ist der Stream geschlossen.");
+        var fileBytes = ms.ToArray();
 
-            var fileBytes = ms.ToArray();
+        // Erstelle die Datei über JavaScript
+        var fileUrl = await JsRuntime.InvokeAsync<string>("createObjectURL", fileBytes, "download.txt");
 
-            // Erstelle die Datei über JavaScript
-            var fileUrl = await JsRuntime.InvokeAsync<string>("createObjectURL", fileBytes, "download.txt");
-
-            // Lade die Datei herunter
-            await JsRuntime.InvokeVoidAsync("downloadFile", fileUrl, "download.xlsx");
+        // Lade die Datei herunter
+        await JsRuntime.InvokeVoidAsync("downloadFile", fileUrl, "download.xlsx");
         
     }
 
@@ -129,5 +181,6 @@
         // Starte den Download, nachdem die Bestätigung erfolgt ist
         await DownloadAsync();
     }
+    #endregion
 
 }

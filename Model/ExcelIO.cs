@@ -10,7 +10,7 @@ public class ExcelIO
 {
     #region Export
     // Append ist das Standardverhalten. Ist ein Sheet mit gleichem Namen vorhanden, wird das Sheet ersetzt.
-    public static void Export<T>(string filePath, IEnumerable<T> data, string? name = null, int offset = 0, string dateFormat = "dd.MM.yyyy")
+    public static void Export<T>(string filePath, IEnumerable<T> data, string? name = null, int offset = 0, string dateFormat = "dd.MM.yyyy") where T : new()
     {
         // Wird kein Name übergeben, wird der Name des Klassentyps verwendet.
         // So können auch Sheets des gleichen Datentyps erstellt werden.
@@ -40,7 +40,7 @@ public class ExcelIO
         workbook.Write(fs);
     }
 
-    public static MemoryStream Export<T>(IEnumerable<T> data, string? name = null, int offset = 0, string dateFormat = "dd.MM.yyyy")
+    public static MemoryStream Export<T>(IEnumerable<T> data, string? name = null, int offset = 0, string dateFormat = "dd.MM.yyyy") where T : new()
     {
         // Wird kein Name übergeben, wird der Name des Klassentyps verwendet.
         // So können auch Sheets des gleichen Datentyps erstellt werden.
@@ -73,6 +73,17 @@ public class ExcelIO
 
         return copyStream;
     }
+
+    public static MemoryStream ExportWorkbook(IWorkbook workbook)
+    {
+        var ms = new MemoryStream();
+        workbook.Write(ms);
+        //ms ist nun geschlossen, daher wird der Stream kopiert und somit neu geöffnet
+        var copyStream = new MemoryStream(ms.ToArray());
+
+        return copyStream;
+    }
+
 
     public static async void ExportAll(string filePath, IEnumerable<IEnumerable<IXPortable>> data)
     {
@@ -189,7 +200,7 @@ public class ExcelIO
         }
     }
 
-    private static void InsertData<T>(ISheet sheet, IEnumerable<T> enumerable, PropertyInfo[] properties, ICellStyle dateCellStyle, int startRowIndex)
+    private static void InsertData<T>(ISheet? sheet, IEnumerable<T> enumerable, PropertyInfo[] properties, ICellStyle dateCellStyle, int startRowIndex)
     {
         var data = enumerable.ToList();
         // Durchlaufe alle Elemente der Daten
@@ -236,7 +247,7 @@ public class ExcelIO
         };
     }
 
-    private static void CreateHeaderRow(ISheet sheet, PropertyInfo[] properties, int startRowIndex)
+    private static void CreateHeaderRow(ISheet? sheet, PropertyInfo[] properties, int startRowIndex)
     {
         // Erstelle die Erste Row mit den Header Daten
         var headerRow = sheet.CreateRow(startRowIndex);
@@ -414,7 +425,7 @@ public class ExcelIO
 
     private static int? GetColumnIndex(IRow headerRow, string columnName)
     {
-        for (int i = 0; i < headerRow.LastCellNum; i++)
+        for (var i = 0; i < headerRow.LastCellNum; i++)
         {
             if (headerRow.GetCell(i).ToString() == columnName)
             {
@@ -422,6 +433,48 @@ public class ExcelIO
             }
         }
         return null;
+    }
+    #endregion
+    
+    #region WorkbookBuilder
+    public class WoorkbookBuilder
+    {
+        private readonly List<IEnumerable<IXPortable>> _dataList = [];
+        private readonly List<PropertyInfo[]> _propertieList = [];
+        private readonly List<string> _nameList = [];
+        private string _dateTimeFormat = "dd.MM.yyyy";
+        
+        public void SetData<T>(IEnumerable<T> data, string name) where T : IXPortable
+        {
+            _dataList.Add((IEnumerable<IXPortable>)data);
+            _propertieList.Add(GetPortableProperties<T>());
+            _nameList.Add(name);
+        }
+
+        public void SetDateTimeFormat(string dateTimeFormat)
+        {
+            _dateTimeFormat = dateTimeFormat;
+        }
+        
+        public IWorkbook Build(IWorkbook workbook)
+        {
+            // Definieren des Datumsformats für die Datumszeile
+            var dateCellStyle = workbook.CreateCellStyle();
+            var dataFormat = workbook.CreateDataFormat().GetFormat(_dateTimeFormat);
+            dateCellStyle.DataFormat = dataFormat;
+            
+           
+            for (var i = 0; i < _dataList.Count; i++)
+            {
+                var sheet = workbook.CreateSheet(_nameList[i]);
+
+                // Erstelle die erste Zeile der Tabelle
+                CreateHeaderRow(sheet, _propertieList[i], 0);
+                // Füge die Daten in die Tabelle ein
+                InsertData(sheet, _dataList[i], _propertieList[i], dateCellStyle, 1);
+            }
+            return workbook;
+        }
     }
     #endregion
 }
@@ -439,6 +492,14 @@ public interface IXPortable
     /// </summary>
     /// <param name="data"></param>
     public void SetData(Dictionary<string, object?> data);
+    
+    /// <summary>
+    /// Gibt den Namen der wieder, welcher für das Tabellenblatt benutzt werden soll.
+    /// Standard sollte der Klassenname sein, welcher das Interface implementiert.
+    /// </summary>
+    /// <returns></returns>
+    public string GetName();
+
 }
 
 public class Helper
