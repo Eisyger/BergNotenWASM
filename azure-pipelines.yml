@@ -9,6 +9,11 @@ variables:
   buildConfiguration: 'Release'  # Konfiguration, die verwendet werden soll
 
 steps:
+
+- task: UseDotNet@2
+  inputs:
+    packageType: 'sdk'
+    version: '8.x'
 - task: DotNetCoreCLI@2
   inputs:
     command: 'restore'
@@ -18,6 +23,7 @@ steps:
     azureSubscription: 'Azure subscription 1(1)(9502841d-29c3-4212-bf50-32ed5e37619c)'
     command: 'publish'
     publishWebProjects: true
+    
 
 - task: DotNetCoreCLI@2
   inputs:
