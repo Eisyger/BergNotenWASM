@@ -2,7 +2,7 @@ trigger:
 - main  # Ersetze dies durch den Branch, den du verwenden möchtest
 
 pool:
-  vmImage: 'ubuntu-latest'  # Du kannst auch 'windows-latest' verwenden, wenn du möchtest
+  default
 
 variables:
   solution: '**/*.sln'  # Der Pfad zu deiner .sln-Datei
