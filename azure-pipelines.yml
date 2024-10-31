@@ -13,6 +13,11 @@ steps:
   inputs:
     command: 'restore'
     projects: '$(solution)'  # Wiederherstellung der NuGet-Pakete
+- task: DotNetCoreCLI@2
+  inputs:
+    azureSubscription: 'Azure subscription 1(1)(9502841d-29c3-4212-bf50-32ed5e37619c)'
+    command: 'publish'
+    publishWebProjects: true
 
 - task: DotNetCoreCLI@2
   inputs:
