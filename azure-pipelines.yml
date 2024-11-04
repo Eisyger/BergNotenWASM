@@ -7,8 +7,8 @@ pool:
   vmImage: 'windows-latest'  # oder 'ubuntu-latest', je nach Präferenz
 
 jobs:
-  - job: Restore
-    displayName: "Restore NuGet Packages"
+  - job: BuildAndPublish
+    displayName: "Build and Publish Blazor WebAssembly Project"
     steps:
       - task: UseDotNet@2
         inputs:
@@ -19,28 +19,8 @@ jobs:
       - script: dotnet restore
         displayName: "Restore NuGet packages"
 
-  - job: Build
-    displayName: "Build Blazor WebAssembly Project"
-    dependsOn: Restore  # Dieser Job wartet, bis Restore abgeschlossen ist
-    steps:
-      - task: UseDotNet@2
-        inputs:
-          packageType: 'sdk'
-          version: '6.x'
-          installationPath: $(Agent.ToolsDirectory)/dotnet
-
       - script: dotnet build --configuration Release
         displayName: "Build the application"
-
-  - job: Publish
-    displayName: "Publish Blazor WebAssembly Project"
-    dependsOn: Build  # Dieser Job wartet, bis Build abgeschlossen ist
-    steps:
-      - task: UseDotNet@2
-        inputs:
-          packageType: 'sdk'
-          version: '6.x'
-          installationPath: $(Agent.ToolsDirectory)/dotnet
 
       - script: dotnet publish --configuration Release --output $(Build.ArtifactStagingDirectory)/publish
         displayName: "Publish the application"
