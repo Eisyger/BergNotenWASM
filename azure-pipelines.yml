@@ -1,7 +1,7 @@
 trigger: none  # Keine automatischen Trigger
 
 pool:
-  vmImage: 'windows-latest'
+  vmImage: 'ubuntu-latest'
 
 steps:
   - task: DotNetCoreCLI@2
