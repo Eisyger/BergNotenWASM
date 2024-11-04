@@ -3,12 +3,9 @@ trigger: none  # Keine automatischen Trigger
 pool:
   vmImage: 'windows-latest'
 
-jobs:
-  - job: Build
-    displayName: "Build Blazor WebAssembly Project"
-    steps:
-      - task: DotNetCoreCLI@2
-        inputs:
-          command: 'build'
-          projects: '**/*.csproj'
-          configuration: 'Release'
+steps:
+  - task: DotNetCoreCLI@2
+    inputs:
+      command: 'build'
+      projects: '**/*.csproj'
+      configuration: 'Release'
