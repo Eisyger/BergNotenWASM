@@ -1,7 +1,7 @@
-trigger: none  # Keine automatischen Trigger, nur manuell starten
+trigger: none  # Keine automatischen Trigger
 
 pool:
-  vmImage: 'windows-latest'  # Verwende das Windows-Image
+  vmImage: 'windows-latest'
 
 jobs:
   - job: Build
@@ -9,6 +9,6 @@ jobs:
     steps:
       - task: DotNetCoreCLI@2
         inputs:
-          command: 'build'  # Befehl für den Build
-          projects: '**/*.csproj'  # Pfad zu den .csproj-Dateien
-          configuration: 'Release'  # Konfiguration, die verwendet werden soll
+          command: 'build'
+          projects: '**/*.csproj'
+          configuration: 'Release'
