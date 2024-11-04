@@ -5,11 +5,5 @@ jobs:
       - task: UseDotNet@2
         inputs:
           packageType: 'sdk'
-          version: '6.x'  # .NET-Version; passe hier an, falls nötig
+          version: '8.x'  # .NET-Version; passe hier an, falls nötig
           installationPath: $(Agent.ToolsDirectory)/dotnet
-
-      - script: dotnet restore
-        displayName: "Restore NuGet packages"
-
-      - script: dotnet build --configuration Release
-        displayName: "Build the application"
