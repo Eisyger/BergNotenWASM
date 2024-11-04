@@ -112,7 +112,7 @@
 
         // Kopiere den Inhalt des Streams in ein Byte-Array
         var data = new byte[stream.Length];
-        @(await stream.ReadAsync(data.AsMemory(0, (int)stream.Length)))
+        _ = await stream.ReadAsync(data.AsMemory(0, (int)stream.Length));
 
         var extension = e.File.Name.Split('.')[1];
 
