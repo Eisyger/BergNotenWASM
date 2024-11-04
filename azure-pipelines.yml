@@ -1,9 +1,14 @@
+trigger: none  # Keine automatischen Trigger, nur manuell starten
+
+pool:
+  vmImage: 'windows-latest'  # Verwende das Windows-Image
+
 jobs:
-  - job: BuildAndPublish
-    displayName: "Build and Publish Blazor WebAssembly Project"
+  - job: Build
+    displayName: "Build Blazor WebAssembly Project"
     steps:
-      - task: UseDotNet@2
+      - task: DotNetCoreCLI@2
         inputs:
-          packageType: 'sdk'
-          version: '8.x'  # .NET-Version; passe hier an, falls nötig
-          installationPath: $(Agent.ToolsDirectory)/dotnet
+          command: 'build'  # Befehl für den Build
+          projects: '**/*.csproj'  # Pfad zu den .csproj-Dateien
+          configuration: 'Release'  # Konfiguration, die verwendet werden soll
