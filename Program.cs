@@ -1,6 +1,7 @@
 using BergNotenWASM;
 using BergNotenWASM.Services;
 using Microsoft.AspNetCore.Components.Web;
+using Microsoft.Identity.Web;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 using Microsoft.AspNetCore.Components.WebAssembly.Authentication;
 using Microsoft.Extensions.Configuration;
