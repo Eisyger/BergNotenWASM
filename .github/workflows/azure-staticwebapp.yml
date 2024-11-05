@@ -29,6 +29,11 @@ jobs:
 
       - name: Restore NuGet packages
         run: dotnet restore
+
+      - name: Create appsettings.json
+        run: |
+          echo '{ "Azure": { "ClientId": "${{ secrets.CLIENT_ID }}", "TenantId": "${{ secrets.TENANT_ID }}" } } }' > appsettings.json
+
         
       - name: Build And Deploy
         id: builddeploy
